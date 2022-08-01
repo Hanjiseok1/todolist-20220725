@@ -27,7 +27,7 @@ public class Todo {
 		return TodoListRespDto.builder()
 				.todoCode(todo_code)
 				.todo(todo_content)
-				.todoComlpete(todo_complete)
+				.todoComlpete(todo_complete == 1)
 				.importance(importance_flag == 1)
 				.totalCount(total_count)
 				.incompleteCount(incomplete_count)
