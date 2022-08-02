@@ -165,11 +165,13 @@ main {
     left: 0px;
 }
 
+.todo-content:not(:last-of-type) {
+    margin-bottom: 10px;
+}
+
 .todo-content {
     display:flex;
     align-items: center;
-    
-    margin-bottom: 10px;
 
     border-bottom: 1px solid #dbdbdb;
 
@@ -211,8 +213,7 @@ main {
     border-radius: 50%;
     position: absolute;
     background-color: #dbdbdb70;
-    right: 30px;
-    z-index: 1;
+    right: 28px;
     cursor: pointer; 
 }
 
@@ -283,7 +284,7 @@ main {
 }
 
 .section-body::-webkit-scrollbar {
-    width: 0px;
+    width:0px;
 }
 
 .todo-add-button {
