@@ -66,7 +66,7 @@ public class TodoController {
 		return ResponseEntity.ok().body(new CMRespDto<>(1, "success", status));
 	}
 	
-	@PutMapping("/importacne/todo/{todoCode}")
+	@PutMapping("/importance/todo/{todoCode}")
 	public ResponseEntity<?> setImportanceTodo(@PathVariable int todoCode) {
 		boolean status = false;
 		try {
