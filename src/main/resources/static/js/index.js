@@ -4,7 +4,8 @@ const typeSelectBoxListLis = typeSelectBoxList.querySelectorAll("li");
 const todoContentList = document.querySelector(".todo-content-list");
 const sectionBoby = document.querySelector(".section-body");
 const incompleteCountNumber = document.querySelector(".incomplete-count-number");
-
+const modalContainer = document.querySelector(".modal-container");
+const todoAddButton = document.querySelector(".todo-add-button");
 /*
 	게시글 불러오기
 	
@@ -13,12 +14,13 @@ const incompleteCountNumber = document.querySelector(".incomplete-count-number")
 		- importance
 		- complete
 		- incomplete
+		
+	2. 요청주소: /api/v1/todolist/list/{type}?page=페이지 번호&contentCount=글의 개수 	
 	
-	2. 요청주소: /api/v1/todolist/list/{type}?page=페이지 번호&contentCount=게시글의 개수
 	3. AJAX 요청을 활용
 		- type: get
 		- url: 요청주소
-		- data: 객체형태 -> {key: value} -> {page: 1, contentCount: 20}
+		- data: 객체 -> { key: value } -> { page: 1, contentCount: 20 }
 		- dataType: 응답받을 데이터의 타입 -> json
 		- success: 함수 -> response 매개변수를 받아야함.
 		- error: 함수 -> 요청실패 400, 500
@@ -30,45 +32,22 @@ const incompleteCountNumber = document.querySelector(".incomplete-count-number")
 						- text/html
 						- text/plain
 						- application/json
-						- enctype: multipart/form-data
+					- enctype : multipart/form-data
 				- 500 에러의 경우
-					- 가장 먼저 해야하는 것 > console창 에러의 가장 위쪽이면서 가장 오른쪽을 확인해야함
+					- 가장 먼저 해야하는 것 > console창 에러의 가장 위쪽이면서 가장 오른쪽 확인
 					- 오타
 					- nullpointer
 					- sql
 					- indexOut
 					- di 잘 못 했을 때
-					- @Component(Contorller, RestContorller, Service, Mapper, Repository, Configuration) IoC에 등록 안했을 때
+					- @Component(Contorller, RestController, Service, Mapper, Repository, Configuration) IoC에 등록 안했을 때
 					- Interface 겹칠 때, Bean 객체가 IoC에 여러개 생성되어 있을 때
-					
 */
-
 let totalPage = 0;
 let page = 1;
 let listType = "all";
 
 load();
-
-function load() {
-	$.ajax({
-		type: "get",
-		url: `/api/v1/todolist/list/${listType}`,
-		data: {
-			"page": page,
-			contentCount: 20
-		},
-		dataType: "json",
-		success: (response) => {
-			const todoList = response.data;
-			
-			setTotalPage(todoList[0].totalCount);
-			setIncompleteCount(todoList[0].incompleteCount);
-			createList(todoList);
-		},
-		error: errorMessage
-		
-	})
-}
 
 function setTotalPage(totalCount){
 	totalPage = totalCount % 20 == 0 ? totalCount / 20 : Math.floor(totalCount / 20) + 1;
@@ -80,6 +59,26 @@ function setIncompleteCount(incompleteCount) {
 
 function appendList(listContent) {
 	todoContentList.innerHTML += listContent
+}
+
+function updateCheckStatus(type, todoContent, todoCode) {
+	let result = updateStatus(type, todoCode);
+	
+	if(
+			(
+				(
+					type == "complete" 
+					&& 
+					(listType == "complete" || listType == "incomplete")
+				) 
+				|| 
+				(type == "importance" && listType == "importance")
+			) 
+			&& 
+			result
+		) {
+		todoContentList.removeChild(todoContent);
+	}
 }
 
 function addCompleteEvent(todoContent, todoCode) {
@@ -121,13 +120,12 @@ function addContentInputEvent(todoContent, todoCode) {
 	let eventFlag = false;
 	
 	let updateTodo = () => {
-		const todoContentTNewValue = todoContentInput.value;
-		if(getChangeStatusOfValue(todoContentOldValue, todoContentTNewValue)){
-			if(updateTodoContent(todoCode, todoContentNetodoContentTNewValue)){
+		const todoContentNewValue = todoContentInput.value;
+		if(getChangeStatusOfValue(todoContentOldValue, todoContentNewValue)){
+			if(updateTodoContent(todoCode, todoContentNewValue)){
 				todoContentText.textContent = todoContentNewValue;
 			}
 		}
-		
 		todoContentText.classList.toggle("visible");
 		todoContentInput.classList.toggle("visible");
 	}
@@ -139,8 +137,6 @@ function addContentInputEvent(todoContent, todoCode) {
 		todoContentInput.focus();
 		eventFlag = true;
 	}
-	
-	
 	
 	todoContentInput.onblur = () => {
 		if(eventFlag){
@@ -160,25 +156,7 @@ function getChangeStatusOfValue(originValue, newValue) {
 	return originValue != newValue;
 }
 
-function updateTodoContent(todoCode, todo) {
-	let successFlag = false;
-	$.ajax({
-		type: "put",
-		url: `/api/v1/todolist/todo/${todoCode}`,
-		contentType: "application/json",
-		data: JSON.stringify({
-			"todoCode": todoCode, 
-			"todo": todo
-			}),
-		async: false,
-		dataType: "json",
-		success: (response) => {
-			successFlag = response.data;
-		},
-		error: errorMessage
-	})
-	return successFlag;
-}
+
 
 function substringTodoCode(todoContent) {
 	const completeCheck = todoContent.querySelector(".complete-check");
@@ -222,6 +200,7 @@ function createList(todoList) {
 	addEvent();
 }
 
+
 sectionBoby.onscroll = () => {
 	console.log(sectionBoby.scrollTop)
 	let checkNum = todoContentList.clientHeight - sectionBoby.offsetHeight - sectionBoby.scrollTop;
@@ -239,13 +218,14 @@ selectedTypeButton.onclick = () => {
     typeSelectBoxList.classList.toggle("visible");
 }
 
+
 function resetPage() {
 	page = 1;
 }
 
 function removeAllclassList(elements, className) {
 	for(let element of elements){
-		elements.classList.remove(className);
+		element.classList.remove(className);
 	}
 }
 
@@ -254,14 +234,14 @@ function setListType(selectedType) {
 }
 
 function clearTodoContentList() {
-		todoContentList.innerHTML = "";
+	todoContentList.innerHTML = "";
 }
 
 for(let i = 0; i < typeSelectBoxListLis.length; i++){
 	
 	typeSelectBoxListLis[i].onclick = () => {
-		resetPage();
-
+		resetPage()
+		
 		removeAllclassList(typeSelectBoxListLis, "type-selected");
 		
 		typeSelectBoxListLis[i].classList.add("type-selected");
@@ -271,7 +251,7 @@ for(let i = 0; i < typeSelectBoxListLis.length; i++){
 		const selectedType = document.querySelector(".selected-type");
 		
 		selectedType.textContent = typeSelectBoxListLis[i].textContent;
-	
+		
 		clearTodoContentList();
 		
 		load();
@@ -280,6 +260,99 @@ for(let i = 0; i < typeSelectBoxListLis.length; i++){
 		
 	}
 	
+}
+
+todoAddButton.onclick = () => {
+	modalContainer.classList.toggle("modal-visible");
+	todoContentList.style.overflow = "hidden";
+	setModalEvent();
+}
+
+function clearModalTodoInputValue(modalTodoInput) {
+	modalTodoInput.value = "";
+}
+
+function uncheckedImportance(importanceFlag) {
+	importanceFlag.checked = false;
+}
+
+function setModalEvent() {
+	const modalCloseButton = modalContainer.querySelector(".modal-close-button");
+	const importanceFlag = modalContainer.querySelector(".importance-check");
+	const modalTodoInput = modalContainer.querySelector(".modal-todo-input");
+	const modalCommitButton = modalContainer.querySelector(".modal-commit-button");
+
+	modalContainer.onclick = (e) => {
+		if(e.target == modalContainer){
+			modalCloseButton.click();
+		}
+	}
+
+	modalCloseButton.onclick = () => {
+		modalContainer.classList.toggle("modal-visible");
+		todoContentList.style.overflow = "auto";
+		uncheckedImportance(importanceFlag);
+		clearModalTodoInputValue(modalTodoInput);
+	}
+	
+	modalTodoInput.onkeyup = () => {
+		if(window.event.keyCode == 13){
+			modalCommitButton.click();
+		}
+	}
+
+	modalCommitButton.onclick = () => {
+		data = {
+			importance: importanceFlag.checked,
+			todo: modalTodoInput.value
+		}
+		addTodo(data);
+		modalCloseButton.click();
+	}
+
+}
+
+///////////////////////////////////////////<<< REQUEST >>>//////////////////////////////////////////////////
+
+function load() {
+	$.ajax({
+		type: "get",
+		url: `/api/v1/todolist/list/${listType}`,
+		data: {
+			"page": page,
+			contentCount: 20
+		},
+		dataType: "json",
+		success: (response) => {
+			const todoList = response.data;
+			
+			setTotalPage(todoList[0].totalCount);
+			setIncompleteCount(todoList[0].incompleteCount);
+			createList(todoList);
+		},
+		error: errorMessage
+		
+	})
+}
+
+function updateTodoContent(todoCode, todo) {
+	let successFlag = false;
+	$.ajax({
+		type: "put",
+		url: `/api/v1/todolist/todo/${todoCode}`,
+		contentType: "application/json",
+		data: JSON.stringify({
+			"todoCode": todoCode, 
+			"todo": todo
+			}),
+		async: false,
+		dataType: "json",
+		success: (response) => {
+			successFlag = response.data;
+		},
+		error: errorMessage
+	})
+	return successFlag;
 }
 
 function updateStatus(type, todoCode) {
@@ -299,26 +372,6 @@ function updateStatus(type, todoCode) {
 	return result;
 }
 
-function updateCheckStatus(type, todoContent, todoCode) {
-	let result = updateStatus(type, todoCode);
-	
-	if(
-			(
-				(
-					type == "complete" 
-					&& 
-					(listType == "complete" || listType == "incomplete")
-				) 
-				|| 
-				(type == "importance" && listType == "importance")
-			) 
-			&& 
-			result
-		) {
-		todoContentList.removeChild(todoContent);
-	}
-}
-
 function deleteTodo(todoContent, todoCode) {
 	$.ajax({
 		type: "delete",
@@ -334,13 +387,30 @@ function deleteTodo(todoContent, todoCode) {
 	})
 }
 
+function addTodo(data) {
+	$.ajax({
+		type: "post",
+		url: "/api/v1/todolist/todo",
+		contentType: "application/json",
+		data: JSON.stringify(data),
+		async: false,
+		dataType: "json",
+		success: (response) => {
+			if(response.data){
+				clearTodoContentList();
+				load();
+			}
+		},
+		error: errorMessage
+	})
+}
+
 function errorMessage(request, status, error) {
 	alert("요청 실패");
 	console.log(request.status);
 	console.log(request.responseText);
 	console.log(error);
 }
-
 
 
 
